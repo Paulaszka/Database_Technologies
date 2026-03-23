@@ -1,40 +1,37 @@
 USE msdb;
 GO
 
--- 1. Utworzenie zadania
-EXEC dbo.sp_add_job
-    @job_name = N'HR_full_backup_daily';
+/* Procedura tworząca nowe zadanie (Job) w usłudze SQL Server Agent */
+EXEC msdb.dbo.sp_add_job
+    @job_name = N'HR_full_backup_daily'; -- Nazwa identyfikująca zadanie w systemie
 GO
 
--- 2. Dodanie kroku (backup bazy HR)
--- Upewnij się, że folder D:\ istnieje i SQL Server ma do niego uprawnienia zapisu
-EXEC dbo.sp_add_jobstep
-    @job_name = N'HR_full_backup_daily',
-    @step_name = N'backup_step',
-    @subsystem = N'TSQL',
-    @command = N'BACKUP DATABASE HR TO DISK = ''D:\HR_full.bak'' WITH INIT;', -- WITH INIT nadpisuje stary plik
-    @database_name = N'master';
+/* Procedura dodająca konkretny krok wykonawczy do istniejącego zadania */
+EXEC msdb.dbo.sp_add_jobstep
+    @job_name = N'HR_full_backup_daily', -- Nazwa zadania, do którego przypisujemy krok
+    @step_name = N'backup_step',         -- Unikalna nazwa dla tego kroku w ramach zadania
+    @subsystem = N'TSQL',                -- Określa silnik wykonawczy (w tym przypadku Transact-SQL)
+    @command = N'BACKUP DATABASE HR TO DISK = ''~/db_backups/HR_full.bak'' WITH INIT;', -- Rzeczywiste polecenie SQL do wykonania
+    @database_name = N'master';          -- Baza danych, w kontekście której zostanie wykonane polecenie
 GO
 
--- 3. Utworzenie i aktywacja harmonogramu (Codziennie o 3:00)
--- @freq_type = 4 (Daily / Codziennie)
--- @freq_interval = 1 (Co 1 dzień)
-EXEC dbo.sp_add_schedule
-    @schedule_name = N'Daily_3AM',
-    @enabled = 1,              -- 1 oznacza, że jest od razu aktywny
-    @freq_type = 4,            -- Codziennie
-    @freq_interval = 1,        -- Co 1 dzień
-    @active_start_time = 030000;
+/* Procedura tworząca harmonogram czasowy określający kiedy zadania mają być uruchamiane */
+EXEC msdb.dbo.sp_add_schedule
+    @schedule_name = N'Daily_3AM',   -- Nazwa identyfikująca dany harmonogram
+    @enabled = 1,                    -- Flaga określająca, czy harmonogram jest aktywny (1) czy wyłączony (0)
+    @freq_type = 4,                  -- Określa typ częstotliwości (wartość 4 oznacza codziennie)
+    @freq_interval = 1,              -- Określa interwał (w połączeniu z trybem dziennym oznacza uruchamianie co 1 dzień)
+    @active_start_time = 030000;     -- Dokładna godzina rozpoczęcia zadania w formacie HHMMSS (03:00:00)
 GO
 
--- 4. Przypisanie harmonogramu do zadania
-EXEC dbo.sp_attach_schedule
-    @job_name = N'HR_full_backup_daily',
-    @schedule_name = N'Daily_3AM';
+/* Procedura wiążąca zdefiniowany harmonogram czasowy z konkretnym zadaniem */
+EXEC msdb.dbo.sp_attach_schedule
+    @job_name = N'HR_full_backup_daily', -- Nazwa zadania, które ma zostać powiązane
+    @schedule_name = N'Daily_3AM';       -- Nazwa harmonogramu, który ma zostać przypisany do zadania
 GO
 
--- 5. Przypisanie zadania do lokalnego serwera (niezbędne do uruchomienia)
-EXEC dbo.sp_add_jobserver
-    @job_name = N'HR_full_backup_daily',
-    @server_name = N'(LOCAL)';
+/* Procedura przypisująca zadanie do konkretnego serwera docelowego, co umożliwia jego start */
+EXEC msdb.dbo.sp_add_jobserver
+    @job_name = N'HR_full_backup_daily', -- Nazwa zadania, które przypisujemy do serwera
+    @server_name = N'(LOCAL)';           -- Nazwa instancji serwera SQL, na której zadanie ma być uruchamiane
 GO
