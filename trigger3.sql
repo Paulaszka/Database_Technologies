@@ -1,78 +1,59 @@
-CREATE OR ALTER TRIGGER check_commission
+-- Wyzwalacz sprawdzający, czy nowa pensja pracownika nie przekracza pensji jego przełożonego.
+-- Zgodnie ze specyfikacją SQL Server, użyto typu AFTER UPDATE z walidacją i ewentualnym wycofaniem transakcji.
+
+CREATE OR ALTER TRIGGER check_employee_salary_update
 ON employees
-INSTEAD OF UPDATE
+AFTER INSERT,UPDATE
 AS
 BEGIN
-    DECLARE @prev_commission NUMERIC(2, 2), @new_commission NUMERIC(2, 2), @is_manager BIT;
-
-    SELECT @prev_commission = commission_pct FROM deleted;
-    SELECT @new_commission = commission_pct FROM inserted;
-
-
-    SELECT @is_manager = CASE WHEN EXISTS (
-        SELECT 1 FROM employees WHERE manager_id = (SELECT employee_id FROM inserted)
-    ) THEN 1 ELSE 0 END;
-
-
-    IF @is_manager = 0
+    -- 1. Sprawdzenie czy pensja mieści się w widełkach dla danego stanowiska (tabela jobs)
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN jobs j ON i.job_id = j.job_id
+        WHERE i.salary < j.min_salary OR i.salary > j.max_salary
+    )
     BEGIN
-        UPDATE employees
-        SET commission_pct = @new_commission
-        WHERE employee_id IN (SELECT employee_id FROM inserted);
+        RAISERROR ('Error: The employee’s salary exceeds the defined pay scale for this role!', 16, 1)
+        ROLLBACK TRANSACTION;
         RETURN;
     END
 
-
-    IF @prev_commission IS NULL
+    -- 2. Sprawdzenie czy nowa pensja pracownika nie przekracza pensji jego przełożonego
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN employees m ON i.manager_id = m.employee_id
+        WHERE i.salary > m.salary
+    )
     BEGIN
-        IF @new_commission > 0.1
-            SET @new_commission = 0.1;
+        RAISERROR('Employee salary cannot exceed manager salary.', 16, 1)
+        ROLLBACK TRANSACTION;
+        RETURN;
     END
-    ELSE
-    BEGIN
-
-        IF @new_commission >= 2 * @prev_commission
-        BEGIN
-            SET @new_commission = 2 * @prev_commission;
-        END
-    END
-
-    UPDATE employees
-    SET commission_pct = @new_commission
-    WHERE employee_id IN (SELECT employee_id FROM inserted);
 END;
 
+-- Przypadki testowe
 
-
---Wyświetlenie managera
-SELECT * FROM employees
-WHERE employee_id = 201;
-
---Wyświetlenie pracownika
-SELECT * FROM employees
-WHERE employee_id = 202;
-
---Ustawienie wartości na null dla managera - wynik: null
+-- Wywołanie z właściwym parametrem
 UPDATE employees
-SET commission_pct = null
-WHERE employee_id = 201;
+SET salary = 7000
+WHERE employee_id = 104;
 
---Ustawienie wartości na 0.25 dla managera - wynik: 0.1
+-- Wywołanie z niewłaściwym parametrem (za duzo kasy)
 UPDATE employees
-SET commission_pct = 0.25
-WHERE employee_id = 201;
+SET salary = 10000
+WHERE employee_id = 104;
 
---Ustawienie wartości na 0.5 dla managera - wynik: 0.2
-UPDATE employees
-SET commission_pct = 0.5
-WHERE employee_id = 201;
 
---Ustawienie wartości na null dla pracownika - wynik: null
-UPDATE employees
-SET commission_pct = null
-WHERE employee_id = 202;
+-- Dodajemy pracownika IT (pensja 5000 mieści się w 4k-10k)
+INSERT INTO employees (employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, manager_id, department_id)
+VALUES (304, 'Marek', 'Poprawny', 'MPOPR', '500.600.700', GETDATE(), 'IT_PROG', 5000, 103, 60);
 
---Ustawienie wartości na 0.5 dla pracownika - wynik: 0.5
-UPDATE employees
-SET commission_pct = 0.5
-WHERE employee_id = 202;
+
+-- Próba przyznania 20 000 programiście, limit to 10 000 :(
+INSERT INTO employees (employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, manager_id, department_id)
+VALUES (303, 'Jan', 'Kowalski', 'JKOWALL', '555.123.456', GETDATE(), 'IT_PROG', 20000, 103, 60);
+
+
+

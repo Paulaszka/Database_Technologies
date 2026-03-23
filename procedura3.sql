@@ -58,6 +58,7 @@ BEGIN
     END
 END;
 
+-- Przypadki testowe 
 
 -- Wywołanie z dodatnią podwyżką
 EXEC update_salary @p_employee_id = 100, @p_raise = 500.0;

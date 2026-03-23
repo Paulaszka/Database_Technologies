@@ -14,6 +14,7 @@ BEGIN
 	        @p_department_name, @p_menager_id, @p_location_id)
 END;
 
+-- Przypadki testowe 
 
 -- Wywołanie tylko z wymaganą nazwą (reszta domyślna)
 EXEC add_new_department @p_department_name = 'Machine Learning Operations';
