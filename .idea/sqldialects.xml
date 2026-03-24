@@ -3,7 +3,14 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/../../../HR MSSQL.txt" dialect="TSQL" />
     <file url="file://$PROJECT_DIR$/HR MSSQL.txt" dialect="TSQL" />
-    <file url="file://$PROJECT_DIR$/Query8.sql" dialect="TSQL" />
+    <file url="file://$PROJECT_DIR$/funkcja1.sql" dialect="TSQL" />
+    <file url="file://$PROJECT_DIR$/funkcja2.sql" dialect="TSQL" />
     <file url="file://$PROJECT_DIR$/harmonogram1.sql" dialect="TSQL" />
+    <file url="file://$PROJECT_DIR$/procedura1.sql" dialect="TSQL" />
+    <file url="file://$PROJECT_DIR$/procedura2.sql" dialect="TSQL" />
+    <file url="file://$PROJECT_DIR$/procedura3.sql" dialect="TSQL" />
+    <file url="file://$PROJECT_DIR$/trigger1.sql" dialect="TSQL" />
+    <file url="file://$PROJECT_DIR$/trigger2.sql" dialect="TSQL" />
+    <file url="file://$PROJECT_DIR$/trigger3.sql" dialect="TSQL" />
   </component>
 </project>
