@@ -45,11 +45,9 @@ UPDATE employees
 SET salary = 10000
 WHERE employee_id = 104;
 
-
 -- Dodajemy pracownika IT (pensja 5000 mieści się w 4k-10k)
 INSERT INTO employees (employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, manager_id, department_id)
 VALUES (304, 'Marek', 'Poprawny', 'MPOPR', '500.600.700', GETDATE(), 'IT_PROG', 5000, 103, 60);
-
 
 -- Próba przyznania 20 000 programiście, limit to 10 000 :(
 INSERT INTO employees (employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, manager_id, department_id)

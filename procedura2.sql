@@ -2,7 +2,6 @@
 -- Automatycznie wyznacza nowy identyfikator (department_id) jako obecne maksimum + 10.
 -- Obsługuje parametry opcjonalne dla menadżera i lokalizacji (domyślnie 2000).
 
-
 CREATE OR ALTER PROCEDURE add_new_department(
     @p_department_name NVARCHAR(100),
     @p_menager_id INT = NULL,

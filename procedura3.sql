@@ -58,6 +58,7 @@ BEGIN
     END
 END;
 
+
 -- Przypadki testowe 
 
 -- Wywołanie z dodatnią podwyżką

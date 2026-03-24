@@ -28,6 +28,7 @@ DEALLOCATE location_cursor;
 END;
 
 
+--Przypadki testowe
 
 DELETE
 FROM locations
