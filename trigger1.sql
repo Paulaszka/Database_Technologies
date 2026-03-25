@@ -8,25 +8,35 @@ ON employees
 AFTER INSERT, UPDATE
 AS
 BEGIN
-    IF EXISTS (
-        SELECT i.department_id
-        FROM inserted i
-        JOIN jobs j ON i.job_id = j.job_id
-        WHERE j.job_title LIKE '%Manager%' OR j.job_title LIKE '%President%'
-        GROUP BY i.department_id
-        HAVING (
-            SELECT COUNT(*)
-            FROM employees e
-            JOIN jobs j2 ON e.job_id = j2.job_id
-            WHERE e.department_id = i.department_id
-            AND (j2.job_title LIKE '%Manager%' OR j2.job_title LIKE '%President%')
-        ) > 3
-    )
-    BEGIN
-        RAISERROR ('Error: The limit on management positions (max. 3) in this department has been reached!', 16, 1);
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
+    IF NOT EXISTS (SELECT 1 FROM inserted) RETURN;
+    BEGIN TRY
+        IF EXISTS (
+            SELECT 1
+            FROM inserted i
+            JOIN jobs j ON i.job_id = j.job_id
+            WHERE j.job_title LIKE '%Manager%' OR j.job_title LIKE '%President%'
+            GROUP BY i.department_id
+            HAVING (
+                SELECT COUNT(*)
+                FROM employees e
+                JOIN jobs j2 ON e.job_id = j2.job_id
+                WHERE e.department_id = i.department_id
+                AND (j2.job_title LIKE '%Manager%' OR j2.job_title LIKE '%President%')
+            ) > 3
+        )
+        BEGIN
+            ;THROW 50003, 'Error: The limit on management positions (max. 3) in this department has been reached!', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        DECLARE @Msg NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @Sev INT = ERROR_SEVERITY();
+        DECLARE @St INT = ERROR_STATE();
+
+        RAISERROR(@Msg, @Sev, @St);
+    END CATCH
 END;
 
 

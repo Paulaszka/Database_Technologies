@@ -3,34 +3,44 @@
 
 CREATE OR ALTER TRIGGER check_employee_salary_update
 ON employees
-AFTER INSERT,UPDATE
+AFTER INSERT, UPDATE
 AS
 BEGIN
-    -- 1. Sprawdzenie czy pensja mieści się w widełkach dla danego stanowiska (tabela jobs)
-    IF EXISTS (
-        SELECT 1
-        FROM inserted i
-        JOIN jobs j ON i.job_id = j.job_id
-        WHERE i.salary < j.min_salary OR i.salary > j.max_salary
-    )
-    BEGIN
-        RAISERROR ('Error: The employee’s salary exceeds the defined pay scale for this role!', 16, 1)
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
+    BEGIN TRY
+        -- 1. Sprawdzenie widełek płacowych (min/max salary z tabeli jobs)
+        IF EXISTS (
+            SELECT 1
+            FROM inserted i
+            JOIN jobs j ON i.job_id = j.job_id
+            WHERE i.salary < j.min_salary OR i.salary > j.max_salary
+        )
+        BEGIN
+            ;THROW 50001, 'Error: The employee’s salary exceeds the defined pay scale for this role!', 1;
+        END
 
-    -- 2. Sprawdzenie czy nowa pensja pracownika nie przekracza pensji jego przełożonego
-    IF EXISTS (
-        SELECT 1
-        FROM inserted i
-        JOIN employees m ON i.manager_id = m.employee_id
-        WHERE i.salary > m.salary
-    )
-    BEGIN
-        RAISERROR('Employee salary cannot exceed manager salary.', 16, 1)
-        ROLLBACK TRANSACTION;
-        RETURN;
-    END
+        -- 2. Sprawdzenie relacji z pensją przełożonego
+        IF EXISTS (
+            SELECT 1
+            FROM inserted i
+            JOIN employees m ON i.manager_id = m.employee_id
+            WHERE i.salary > m.salary
+        )
+        BEGIN
+            ;THROW 50002, 'Error: Employee salary cannot exceed manager salary.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        -- W wyzwalaczu, jeśli wystąpi błąd, transakcja musi zostać wycofana
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        -- Przekazujemy błąd dalej do aplikacji/użytkownika
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
 END;
 
 -- Przypadki testowe
