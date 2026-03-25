@@ -3,7 +3,8 @@ GO
 
 /* Procedura tworząca nowe zadanie (Job) w usłudze SQL Server Agent */
 EXEC msdb.dbo.sp_add_job
-    @job_name = N'HR_full_backup_daily'; -- Nazwa identyfikująca zadanie w systemie
+    @job_name = N'HR_full_backup_daily',  -- Nazwa identyfikująca zadanie w systemie
+    @owner_login_name = 'sa';
 GO
 
 /* Procedura dodająca konkretny krok wykonawczy do istniejącego zadania */
@@ -11,7 +12,7 @@ EXEC msdb.dbo.sp_add_jobstep
     @job_name = N'HR_full_backup_daily', -- Nazwa zadania, do którego przypisujemy krok
     @step_name = N'backup_step',         -- Unikalna nazwa dla tego kroku w ramach zadania
     @subsystem = N'TSQL',                -- Określa silnik wykonawczy (w tym przypadku Transact-SQL)
-    @command = N'BACKUP DATABASE HR TO DISK = ''~/db_backups/HR_full.bak'' WITH INIT;', -- Rzeczywiste polecenie SQL do wykonania
+    @command = N'BACKUP DATABASE HR TO DISK = ''/var/opt/mssql/backups/HR_full.bak'' WITH INIT;', -- Rzeczywiste polecenie SQL do wykonania
     @database_name = N'master';          -- Baza danych, w kontekście której zostanie wykonane polecenie
 GO
 
@@ -35,3 +36,28 @@ EXEC msdb.dbo.sp_add_jobserver
     @job_name = N'HR_full_backup_daily', -- Nazwa zadania, które przypisujemy do serwera
     @server_name = N'(LOCAL)';           -- Nazwa instancji serwera SQL, na której zadanie ma być uruchamiane
 GO
+
+--- Wyświetl informacje o zadaniu czasowym
+
+SELECT
+    j.name AS JobName,
+    j.enabled AS IsEnabled,
+    js.step_name AS StepName,
+    js.command AS SQLCode,
+    jh.run_date AS LastRunDate,
+    CASE jh.run_status
+        WHEN 0 THEN 'Failed'
+        WHEN 1 THEN 'Succeeded'
+        WHEN 2 THEN 'Retry'
+        WHEN 3 THEN 'Canceled'
+    END AS LastRunStatus,
+    jh.message AS message
+FROM msdb.dbo.sysjobs j
+JOIN msdb.dbo.sysjobsteps js ON j.job_id = js.job_id
+LEFT JOIN msdb.dbo.sysjobhistory jh ON j.job_id = jh.job_id
+    AND jh.instance_id = (SELECT MAX(instance_id) FROM msdb.dbo.sysjobhistory WHERE job_id = j.job_id)
+ORDER BY j.name;
+
+--- Wywołanie zadania
+
+EXEC dbo.sp_start_job @job_name = 'HR_full_backup_daily'

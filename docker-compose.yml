@@ -1,16 +1,18 @@
 services:
   mssql:
-    image: mcr.microsoft.com/mssql/server:2019-latest
+    image: mcr.microsoft.com/mssql/server:2025-latest
     container_name: mssql
     platform: linux/amd64
     restart: always
     environment:
       SA_PASSWORD: "Qwerty1234!"
       ACCEPT_EULA: "Y"
+      MSSQL_AGENT_ENABLED: "True"
     ports:
       - "1433:1433"
     volumes:
       - mssql_data:/var/opt/mssql
+      - ./my_backups:/var/opt/mssql/backups
 
 volumes:
   mssql_data:
