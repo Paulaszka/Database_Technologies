@@ -21,7 +21,7 @@ EXEC msdb.dbo.sp_add_schedule
     @enabled = 1,                    -- Flaga określająca, czy harmonogram jest aktywny (1) czy wyłączony (0)
     @freq_type = 4,                  -- Określa typ częstotliwości (wartość 4 oznacza codziennie)
     @freq_interval = 1,              -- Określa interwał (w połączeniu z trybem dziennym oznacza uruchamianie co 1 dzień)
-    @active_start_time = 175400;     -- Dokładna godzina rozpoczęcia zadania w formacie HHMMSS (03:00:00)
+    @active_start_time = 030000;     -- Dokładna godzina rozpoczęcia zadania w formacie HHMMSS (03:00:00)
 GO
 
 /* Procedura wiążąca zdefiniowany harmonogram czasowy z konkretnym zadaniem */
