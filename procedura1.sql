@@ -31,5 +31,5 @@ BEGIN
 END;
 
 
--- Wywołanie procedure z określonym progiem maksymalnego wynagrodzenia
-EXEC print_cities_with_max_salary @max_salary = 10000;
+-- Wywołanie procedury z określonym progiem maksymalnego wynagrodzenia
+EXEC print_cities_with_max_salary @p_max_salary = 10000;

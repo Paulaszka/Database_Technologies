@@ -35,7 +35,6 @@ RETURN (
         AS DECIMAL(10,2)) AS percentage_of_location
     FROM employees_in_deperatments dc
     CROSS JOIN employees_in_location_sum eil
-    ORDER BY percentage_of_location DESC
 );
 
 

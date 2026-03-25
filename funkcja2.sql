@@ -47,5 +47,5 @@ END;
 
 
 -- Przykład wywołania:
-SELECT location_id, city, postal_code, dbo.get_clean_postal_code(location_id) AS clean_postal
+SELECT location_id, city, postal_code, dbo.get_clean_postal_code(location_id) AS clean_postal_code
 FROM locations;
